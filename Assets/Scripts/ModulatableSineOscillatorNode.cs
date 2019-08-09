@@ -1,8 +1,8 @@
-﻿using Unity.Burst;
-using Unity.Experimental.Audio;
+﻿using Unity.Audio;
+using Unity.Burst;
 
 [BurstCompile]
-struct ModulatableSineOscillatorNodeJob : IAudioJob<ModulatableSineOscillatorNodeJob.Params, NoProvs>
+struct ModulatableSineOscillatorNodeJob : IAudioKernel<ModulatableSineOscillatorNodeJob.Params, NoProvs>
 {
     double phase;
 
@@ -11,7 +11,7 @@ struct ModulatableSineOscillatorNodeJob : IAudioJob<ModulatableSineOscillatorNod
         Frequency
     }
 
-    public void Init(ParameterData<Params> parameters)
+    public void Dispose()
     {
     }
 
@@ -25,7 +25,7 @@ struct ModulatableSineOscillatorNodeJob : IAudioJob<ModulatableSineOscillatorNod
         var dst = outputBuffer.Buffer;
 
         int offset = 0;
-        for (uint n = 0; n < sampleFrames; n++)
+        for (int n = 0; n < sampleFrames; n++)
         {
             for (uint c = 0; c < numChannels; c++) {
                 dst[offset++] = (float)Unity.Mathematics.math.sin(phase);
@@ -34,5 +34,9 @@ struct ModulatableSineOscillatorNodeJob : IAudioJob<ModulatableSineOscillatorNod
             phase += ctx.Parameters.GetFloat(Params.Frequency, n) * 2 * Unity.Mathematics.math.PI / ctx.SampleRate;
             phase += src[offset - 2];
         }
+    }
+
+    public void Initialize()
+    {
     }
 }

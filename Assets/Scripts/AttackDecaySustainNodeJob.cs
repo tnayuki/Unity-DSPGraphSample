@@ -1,12 +1,12 @@
-﻿using Unity.Burst;
-using Unity.Experimental.Audio;
+﻿using Unity.Audio;
+using Unity.Burst;
 using Unity.Mathematics;
 
 [BurstCompile]
-struct AttackDecaySustainNodeJob : IAudioJob<AttackDecaySustainNodeJob.Params, NoProvs>
+struct AttackDecaySustainNodeJob : IAudioKernel<AttackDecaySustainNodeJob.Params, NoProvs>
 {
     bool started;
-    ulong startDSPClock;
+    long startDSPClock;
 
     public enum Params
     {
@@ -15,7 +15,7 @@ struct AttackDecaySustainNodeJob : IAudioJob<AttackDecaySustainNodeJob.Params, N
         Sustain
     }
 
-    public void Init(ParameterData<Params> parameters)
+    public void Dispose()
     {
     }
 
@@ -29,7 +29,7 @@ struct AttackDecaySustainNodeJob : IAudioJob<AttackDecaySustainNodeJob.Params, N
         var dst = outputBuffer.Buffer;
 
         int offset = 0;
-        for (uint n = 0; n < sampleFrames; n++)
+        for (int n = 0; n < sampleFrames; n++)
         {
             var attackTime = ctx.Parameters.GetFloat(Params.Attack, n);
             var attackRate = 1.0 / attackTime;
@@ -64,5 +64,9 @@ struct AttackDecaySustainNodeJob : IAudioJob<AttackDecaySustainNodeJob.Params, N
                 offset++;
             }
         }
+    }
+
+    public void Initialize()
+    {
     }
 }

@@ -1,5 +1,4 @@
-﻿using Unity.Collections;
-using Unity.Experimental.Audio;
+﻿using Unity.Audio;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -7,13 +6,20 @@ using MidiJack;
 
 public class Demo3 : MonoBehaviour
 {
+    private AudioOutputHandle _outputHandle;
+
     private DSPNode[] modulatorNode = new DSPNode[128];
     private DSPNode[] carrierNode = new DSPNode[128];
 
     void Start()
     {
+        var graph = DSPGraph.Create(SoundFormat.Stereo, 2, 1024, 48000);
+
+        var driver = new DefaultDSPGraphDriver { Graph = graph };
+
+        _outputHandle = driver.AttachToDefaultOutput();
+
         MidiMaster.noteOnDelegate += (MidiChannel channel, int noteNumber, float velocity) => {
-            var graph = DSPGraph.GetDefaultGraph();
             var block = graph.CreateCommandBlock();
 
             modulatorNode[noteNumber] = block.CreateDSPNode<SineOscillatorNodeJob.Params, NoProvs, SineOscillatorNodeJob>();
@@ -32,13 +38,12 @@ public class Demo3 : MonoBehaviour
             );
 
             block.Connect(modulatorNode[noteNumber], 0, carrierNode[noteNumber], 0);
-            block.Connect(carrierNode[noteNumber], 0, graph.GetRootDSP(), 0);
+            block.Connect(carrierNode[noteNumber], 0, graph.RootDSP, 0);
 
             block.Complete();
         };
 
         MidiMaster.noteOffDelegate += (MidiChannel channel, int noteNumber) => {
-            var graph = DSPGraph.GetDefaultGraph();
             var block = graph.CreateCommandBlock();
 
             block.ReleaseDSPNode(modulatorNode[noteNumber]);
@@ -46,5 +51,9 @@ public class Demo3 : MonoBehaviour
 
             block.Complete();
         };
+    }
+
+    void OnDestroy() {
+        _outputHandle.Dispose();
     }
 }
